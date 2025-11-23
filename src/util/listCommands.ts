@@ -24,35 +24,35 @@ export async function listCommands() {
 		}
 
 		if (commands.length === 0) {
-			console.log('📋 Nenhum comando registrado.');
+			console.log('📋 No commands registered.');
 			return [];
 		}
 
-		console.log('📋 Comandos registrados:');
+		console.log('📋 Registered commands:');
 		commands.forEach((cmd) => {
 			console.log(`   • ${cmd.name} (ID: ${cmd.id})`);
 		});
 		return commands;
 	} catch (error) {
-		console.error('❌ Erro ao listar comandos:', error);
+		console.error('❌ Error listing commands:', error);
 		return [];
 	}
 }
 
 if (isMainModule) {
 	if (!applicationId) {
-		console.error('❌ Erro: APPLICATION_ID não encontrado no arquivo .env');
+		console.error('❌ Error: APPLICATION_ID not found in .env file');
 		process.exit(1);
 	}
 
-	console.log('📋 Listando comandos...');
+	console.log('📋 Listing commands...');
 	if (guildId) {
-		console.log(`🔧 Modo DESENVOLVIMENTO (Guild ID: ${guildId})`);
+		console.log(`🔧 DEVELOPMENT mode (Guild ID: ${guildId})`);
 	} else {
-		console.log(`🌍 Modo PRODUÇÃO (comandos globais)`);
+		console.log(`🌍 PRODUCTION mode (global commands)`);
 	}
 	listCommands().catch((error) => {
-		console.error('❌ Erro ao executar listagem:', error);
+		console.error('❌ Error executing listing:', error);
 		process.exit(1);
 	});
 }

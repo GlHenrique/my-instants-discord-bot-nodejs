@@ -11,14 +11,14 @@ import {
 import type { VoiceBasedChannel } from 'discord.js';
 import axios from 'axios';
 
-// Interface para itens da fila
+// Interface for queue items
 export interface QueueItem {
 	name: string;
 	mp3Url: string;
 	channel: VoiceBasedChannel;
 }
 
-// Classe para gerenciar a fila de reprodução por guild
+// Class to manage playback queue per guild
 class AudioQueueManager {
 	private queues = new Map<string, QueueItem[]>();
 	private activeConnections = new Map<string, VoiceConnection>();
@@ -27,7 +27,7 @@ class AudioQueueManager {
 	private isPlaying = new Map<string, boolean>();
 
 	/**
-	 * Adiciona um item à fila de reprodução
+	 * Adds an item to the playback queue
 	 */
 	async addToQueue(guildId: string, item: QueueItem): Promise<void> {
 		if (!this.queues.has(guildId)) {
@@ -37,16 +37,16 @@ class AudioQueueManager {
 		const queue = this.queues.get(guildId)!;
 		queue.push(item);
 
-		console.log(`📥 Item adicionado à fila: "${item.name}" (Posição: ${queue.length})`);
+		console.log(`📥 Item added to queue: "${item.name}" (Position: ${queue.length})`);
 
-		// Se não está tocando, inicia a reprodução
+		// If not playing, start playback
 		if (!this.isPlaying.get(guildId)) {
 			await this.processQueue(guildId);
 		}
 	}
 
 	/**
-	 * Processa a fila de reprodução
+	 * Processes the playback queue
 	 */
 	private async processQueue(guildId: string): Promise<void> {
 		const queue = this.queues.get(guildId);
@@ -55,7 +55,7 @@ class AudioQueueManager {
 			return;
 		}
 
-		// Se já está tocando, não processa novamente
+		// If already playing, don't process again
 		if (this.isPlaying.get(guildId)) {
 			return;
 		}
@@ -63,40 +63,38 @@ class AudioQueueManager {
 		this.isPlaying.set(guildId, true);
 		const item = queue.shift()!;
 
-		console.log(`▶️ Reproduzindo da fila: "${item.name}" (${queue.length} item(s) restante(s))`);
+		console.log(`▶️ Playing from queue: "${item.name}" (${queue.length} item(s) remaining)`);
 
 		try {
 			await this.playAudio(item.channel, item.mp3Url, item.name);
 		} catch (error) {
-			console.error(`❌ Erro ao reproduzir "${item.name}":`, error);
+			console.error(`❌ Error playing "${item.name}":`, error);
 		}
 
-		// Processa o próximo item da fila
+		// Process next item in queue
 		this.isPlaying.set(guildId, false);
 		await this.processQueue(guildId);
 	}
 
 	/**
-	 * Reproduz um áudio no canal de voz
+	 * Plays audio in the voice channel
 	 */
 	private async playAudio(channel: VoiceBasedChannel, mp3Url: string, itemName: string): Promise<void> {
 		const guildId = channel.guild.id;
 
-		// Verifica se o adapterCreator está disponível
+		// Check if adapterCreator is available
 		if (!channel.guild.voiceAdapterCreator) {
-			throw new Error(
-				'Voice adapter creator não está disponível. O bot pode não estar totalmente conectado ao Discord.',
-			);
+			throw new Error('Voice adapter creator is not available. The bot may not be fully connected to Discord.');
 		}
 
-		// Cancela timer de desconexão se existir
+		// Cancel disconnect timer if it exists
 		if (this.disconnectTimers.has(guildId)) {
-			console.log('⏸️ Cancelando timer de desconexão - nova reprodução iniciada');
+			console.log('⏸️ Canceling disconnect timer - new playback started');
 			clearTimeout(this.disconnectTimers.get(guildId)!);
 			this.disconnectTimers.delete(guildId);
 		}
 
-		// Obtém ou cria conexão de voz
+		// Get or create voice connection
 		let connection = this.activeConnections.get(guildId);
 
 		if (!connection || connection.state.status === VoiceConnectionStatus.Destroyed) {
@@ -108,11 +106,11 @@ class AudioQueueManager {
 				selfMute: false,
 			});
 			this.activeConnections.set(guildId, connection);
-			console.log(`✅ Nova conexão criada. Estado inicial: ${connection.state.status}`);
+			console.log(`✅ New connection created. Initial state: ${connection.state.status}`);
 		} else {
-			// Se a conexão existe mas está em um canal diferente, reconecta
+			// If connection exists but is in a different channel, reconnect
 			if (connection.joinConfig.channelId !== channel.id) {
-				console.log('🔄 Reconectando ao novo canal...');
+				console.log('🔄 Reconnecting to new channel...');
 				connection.destroy();
 				connection = joinVoiceChannel({
 					channelId: channel.id,
@@ -125,7 +123,7 @@ class AudioQueueManager {
 			}
 		}
 
-		// Obtém stream de áudio
+		// Get audio stream
 		let audioStream: Readable | string = mp3Url;
 		try {
 			const response = await axios.get(mp3Url, {
@@ -133,9 +131,9 @@ class AudioQueueManager {
 				timeout: 10000,
 			});
 			audioStream = response.data;
-			console.log('✅ Stream de áudio obtido com sucesso');
+			console.log('✅ Audio stream obtained successfully');
 		} catch (error) {
-			console.warn('⚠️ Não foi possível obter stream, usando URL diretamente:', error);
+			console.warn('⚠️ Could not get stream, using URL directly:', error);
 			audioStream = mp3Url;
 		}
 
@@ -170,45 +168,45 @@ class AudioQueueManager {
 				try {
 					cleanup();
 
-					// Para player anterior se existir
+					// Stop previous player if it exists
 					const existingSubscription =
 						connection.state.status === VoiceConnectionStatus.Ready ? connection.state.subscription : null;
 					if (existingSubscription) {
-						console.log('🛑 Parando player anterior...');
+						console.log('🛑 Stopping previous player...');
 						existingSubscription.player.stop();
 						existingSubscription.unsubscribe();
 					}
 
 					const player = createAudioPlayer();
 					this.activePlayers.set(guildId, player);
-					console.log('🎵 Player de áudio criado');
+					console.log('🎵 Audio player created');
 
 					const resource = createAudioResource(audioStream, {
 						inlineVolume: true,
 					});
 
-					console.log(`🎶 Recurso de áudio criado (tipo: ${typeof audioStream === 'string' ? 'URL' : 'Stream'})`);
-					console.log(`🎶 Reproduzindo: ${itemName}`);
+					console.log(`🎶 Audio resource created (type: ${typeof audioStream === 'string' ? 'URL' : 'Stream'})`);
+					console.log(`🎶 Playing: ${itemName}`);
 
 					resource.volume?.setVolume(1.0);
 
 					if (connection.state.status !== VoiceConnectionStatus.Ready) {
-						console.error('❌ Conexão não está pronta! Estado:', connection.state.status);
-						safeReject(new Error('Conexão de voz não está pronta'));
+						console.error('❌ Connection is not ready! State:', connection.state.status);
+						safeReject(new Error('Voice connection is not ready'));
 						return;
 					}
 
 					player.play(resource);
 					connection.subscribe(player);
-					console.log('▶️ Áudio iniciado');
+					console.log('▶️ Audio started');
 
 					player.on(AudioPlayerStatus.Playing, () => {
-						console.log(`🎵 Reproduzindo: "${itemName}"`);
+						console.log(`🎵 Playing: "${itemName}"`);
 					});
 
 					player.on(AudioPlayerStatus.Idle, () => {
-						console.log(`⏹️ Áudio terminou: "${itemName}"`);
-						// Agenda desconexão em 5 minutos se não houver mais itens na fila
+						console.log(`⏹️ Audio finished: "${itemName}"`);
+						// Schedule disconnect in 5 minutes if there are no more items in queue
 						const queue = this.queues.get(guildId);
 						if (!queue || queue.length === 0) {
 							this.scheduleDisconnect(guildId);
@@ -217,7 +215,7 @@ class AudioQueueManager {
 					});
 
 					player.on('error', (error) => {
-						console.error(`Erro no player de áudio para "${itemName}":`, {
+						console.error(`Error in audio player for "${itemName}":`, {
 							name: error instanceof Error ? error.name : 'Unknown',
 							message: error instanceof Error ? error.message : String(error),
 						});
@@ -226,31 +224,31 @@ class AudioQueueManager {
 					});
 
 					player.on('stateChange', (oldState, newState) => {
-						console.log(`🎵 Mudança de estado do player: ${oldState.status} → ${newState.status} (${itemName})`);
+						console.log(`🎵 Player state change: ${oldState.status} → ${newState.status} (${itemName})`);
 					});
 
 					resource.playStream?.on('error', (error) => {
-						console.error(`❌ Erro no stream de áudio para "${itemName}":`, error);
+						console.error(`❌ Error in audio stream for "${itemName}":`, error);
 					});
 				} catch (error) {
-					console.error(`❌ Erro ao configurar áudio para "${itemName}":`, error);
+					console.error(`❌ Error setting up audio for "${itemName}":`, error);
 					this.cleanupGuild(guildId);
 					safeReject(error as Error);
 				}
 			};
 
-			// Listener para mudanças de estado da conexão
+			// Listener for connection state changes
 			connection.on('stateChange', (oldState, newState) => {
-				console.log(`🔄 Mudança de estado da conexão: ${oldState.status} → ${newState.status}`);
+				console.log(`🔄 Connection state change: ${oldState.status} → ${newState.status}`);
 
 				if (newState.status === VoiceConnectionStatus.Disconnected) {
 					console.log(
-						`🔌 Desconectado do canal de voz. Estado anterior: ${oldState.status}, novo estado: ${newState.status}`,
+						`🔌 Disconnected from voice channel. Previous state: ${oldState.status}, new state: ${newState.status}`,
 					);
 					if (!isResolved && oldState.status !== VoiceConnectionStatus.Ready) {
-						console.error('❌ Conexão desconectada antes de estar pronta');
+						console.error('❌ Connection disconnected before being ready');
 						this.cleanupGuild(guildId);
-						safeReject(new Error('Conexão perdida - verifique as permissões do bot no canal de voz'));
+						safeReject(new Error('Connection lost - check bot permissions on voice channel'));
 					} else if (oldState.status === VoiceConnectionStatus.Ready) {
 						if (this.disconnectTimers.has(guildId)) {
 							clearTimeout(this.disconnectTimers.get(guildId)!);
@@ -262,7 +260,7 @@ class AudioQueueManager {
 				}
 			});
 
-			// Verifica se a conexão já está pronta
+			// Check if connection is already ready
 			if (connection.state.status === VoiceConnectionStatus.Ready) {
 				createAndPlayAudio();
 			} else {
@@ -272,47 +270,47 @@ class AudioQueueManager {
 			}
 
 			connection.on(VoiceConnectionStatus.Connecting, () => {
-				console.log('🔄 Conectando ao canal de voz...');
+				console.log('🔄 Connecting to voice channel...');
 			});
 
 			connection.on('error', (error) => {
-				console.error('Erro na conexão de voz:', {
+				console.error('Error in voice connection:', {
 					name: error instanceof Error ? error.name : 'Unknown',
 					message: error instanceof Error ? error.message : String(error),
 				});
 				this.cleanupGuild(guildId);
 				const errorMessage = error instanceof Error ? error.message : String(error);
 				if (errorMessage.includes('permission') || errorMessage.includes('Missing')) {
-					safeReject(new Error('Sem permissões para entrar no canal de voz. Verifique as permissões do bot.'));
+					safeReject(new Error('No permissions to join voice channel. Check bot permissions.'));
 				} else {
 					safeReject(error);
 				}
 			});
 
-			// Timeout de 20 segundos
+			// 20 second timeout
 			timeoutId = setTimeout(() => {
 				const currentStatus = connection.state.status;
-				console.error(`⏱️ Timeout ao conectar ao canal de voz. Estado atual: ${currentStatus}`);
+				console.error(`⏱️ Timeout connecting to voice channel. Current state: ${currentStatus}`);
 				if (currentStatus !== VoiceConnectionStatus.Ready && currentStatus !== VoiceConnectionStatus.Destroyed) {
 					this.cleanupGuild(guildId);
-					safeReject(new Error(`Timeout ao conectar ao canal de voz. Estado final: ${currentStatus}`));
+					safeReject(new Error(`Timeout connecting to voice channel. Final state: ${currentStatus}`));
 				}
 			}, 20000);
 		});
 	}
 
 	/**
-	 * Agenda desconexão após 5 minutos de inatividade
+	 * Schedules disconnect after 5 minutes of inactivity
 	 */
 	private scheduleDisconnect(guildId: string): void {
 		if (this.disconnectTimers.has(guildId)) {
 			clearTimeout(this.disconnectTimers.get(guildId)!);
 		}
 
-		console.log('⏰ Agendando desconexão em 5 minutos...');
+		console.log('⏰ Scheduling disconnect in 5 minutes...');
 		const timer = setTimeout(
 			() => {
-				console.log(`🔌 Desconectando do canal de voz após 5 minutos de inatividade (Guild: ${guildId})`);
+				console.log(`🔌 Disconnecting from voice channel after 5 minutes of inactivity (Guild: ${guildId})`);
 				this.cleanupGuild(guildId);
 			},
 			5 * 60 * 1000,
@@ -322,7 +320,7 @@ class AudioQueueManager {
 	}
 
 	/**
-	 * Limpa recursos de um guild
+	 * Cleans up resources for a guild
 	 */
 	private cleanupGuild(guildId: string): void {
 		if (this.disconnectTimers.has(guildId)) {
@@ -346,25 +344,25 @@ class AudioQueueManager {
 	}
 
 	/**
-	 * Obtém o tamanho da fila para um guild
+	 * Gets the queue size for a guild
 	 */
 	getQueueSize(guildId: string): number {
 		return this.queues.get(guildId)?.length || 0;
 	}
 
 	/**
-	 * Limpa a fila de um guild
+	 * Clears the queue for a guild
 	 */
 	clearQueue(guildId: string): void {
 		const queue = this.queues.get(guildId);
 		if (queue) {
 			queue.length = 0;
-			console.log(`🗑️ Fila limpa para o guild ${guildId}`);
+			console.log(`🗑️ Queue cleared for guild ${guildId}`);
 		}
 	}
 
 	/**
-	 * Para a reprodução atual e limpa a fila
+	 * Stops current playback and clears the queue
 	 */
 	stop(guildId: string): void {
 		this.clearQueue(guildId);
@@ -373,16 +371,16 @@ class AudioQueueManager {
 			player.stop();
 		}
 		this.isPlaying.set(guildId, false);
-		console.log(`⏹️ Reprodução parada para o guild ${guildId}`);
+		console.log(`⏹️ Playback stopped for guild ${guildId}`);
 	}
 
 	/**
-	 * Verifica se está tocando algo no guild
+	 * Checks if something is playing in the guild
 	 */
 	isCurrentlyPlaying(guildId: string): boolean {
 		return this.isPlaying.get(guildId) || false;
 	}
 }
 
-// Instância singleton do gerenciador de fila
+// Singleton instance of queue manager
 export const audioQueue = new AudioQueueManager();

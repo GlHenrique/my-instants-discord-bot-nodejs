@@ -77,7 +77,7 @@ async function searchMyInstants(query: string): Promise<SearchResult[]> {
 
 		return results.slice(0, 1); // Limit to first result
 	} catch (error) {
-		console.error('Erro ao buscar no myinstants:', error);
+		console.error('Error searching myinstants:', error);
 		throw error;
 	}
 }
@@ -137,7 +137,7 @@ async function getMp3Url(instantUrl: string): Promise<string | null> {
 
 		return null;
 	} catch (error) {
-		console.error('Erro ao extrair URL do MP3:', error);
+		console.error('Error extracting MP3 URL:', error);
 		return null;
 	}
 }
@@ -158,31 +158,31 @@ export default {
 	async execute(interaction) {
 		// Get the query from the interaction
 		const input = interaction.options.getString('input', true);
-		console.log(`Pesquisando por: ${input}`);
+		console.log(`Searching for: ${input}`);
 
 		// Check if user is in a voice channel
 		const member = interaction.member;
 		if (!member || !(member instanceof GuildMember) || !member.voice.channel) {
 			await interaction.reply({
-				content: '❌ Você precisa estar em um canal de voz para usar este comando!',
+				content: '❌ You need to be in a voice channel to use this command!',
 				ephemeral: true,
 			});
 			return;
 		}
 
 		const voiceChannel = member.voice.channel;
-		console.log(`📢 Canal de voz identificado: ${voiceChannel.name} (${voiceChannel.id})`);
-		console.log(`👥 Membros no canal: ${voiceChannel.members.size}`);
+		console.log(`📢 Voice channel identified: ${voiceChannel.name} (${voiceChannel.id})`);
+		console.log(`👥 Members in channel: ${voiceChannel.members.size}`);
 
 		// Check if bot has permissions to join the channel
 		const botMember = interaction.guild?.members.me;
 		if (botMember) {
-			console.log(`🤖 Bot member encontrado: ${botMember.user.tag}`);
+			console.log(`🤖 Bot member found: ${botMember.user.tag}`);
 			console.log(`🆔 Bot ID: ${botMember.id}`);
 
 			// Check server permissions
 			const guildPermissions = botMember.permissions;
-			console.log(`🔐 Permissões do bot no servidor:`, {
+			console.log(`🔐 Bot permissions on server:`, {
 				Connect: guildPermissions.has('Connect'),
 				Speak: guildPermissions.has('Speak'),
 				ViewChannel: guildPermissions.has('ViewChannel'),
@@ -190,7 +190,7 @@ export default {
 
 			// Check specific channel permissions
 			const channelPermissions = voiceChannel.permissionsFor(botMember);
-			console.log(`🔐 Permissões do bot no canal "${voiceChannel.name}":`, {
+			console.log(`🔐 Bot permissions on channel "${voiceChannel.name}":`, {
 				Connect: channelPermissions?.has('Connect'),
 				Speak: channelPermissions?.has('Speak'),
 				ViewChannel: channelPermissions?.has('ViewChannel'),
@@ -198,7 +198,7 @@ export default {
 
 			// Check calculated permissions (considering overrides)
 			const calculatedPermissions = voiceChannel.permissionsFor(botMember, true);
-			console.log(`🔐 Permissões calculadas (com sobreposições):`, {
+			console.log(`🔐 Calculated permissions (with overrides):`, {
 				Connect: calculatedPermissions?.has('Connect'),
 				Speak: calculatedPermissions?.has('Speak'),
 				ViewChannel: calculatedPermissions?.has('ViewChannel'),
@@ -207,8 +207,8 @@ export default {
 			// Check if it has the necessary permissions (use calculatedPermissions which considers all overrides)
 			if (!calculatedPermissions?.has(['Connect', 'Speak'])) {
 				const missingPerms = [];
-				if (!calculatedPermissions?.has('Connect')) missingPerms.push('Conectar');
-				if (!calculatedPermissions?.has('Speak')) missingPerms.push('Falar');
+				if (!calculatedPermissions?.has('Connect')) missingPerms.push('Connect');
+				if (!calculatedPermissions?.has('Speak')) missingPerms.push('Speak');
 
 				// Check if the problem is in the server or channel
 				const hasGuildConnect = guildPermissions.has('Connect');
@@ -219,42 +219,42 @@ export default {
 				let problemDescription = '';
 				if (hasGuildConnect && hasGuildSpeak && (!hasChannelConnect || !hasChannelSpeak)) {
 					problemDescription =
-						`⚠️ **Problema identificado:** O bot tem as permissões no servidor, mas há uma **sobreposição no canal** que está bloqueando!\n\n` +
-						`**Solução:**\n` +
-						`1. Clique com o botão direito no canal de voz **"${voiceChannel.name}"**\n` +
-						`2. Selecione **"Editar Canal"**\n` +
-						`3. Vá na aba **"Permissões"**\n` +
-						`4. Encontre a função do seu bot (ou adicione o bot se não estiver lá)\n` +
-						`5. **Ative** as permissões:\n` +
-						`   ✅ **Conectar**\n` +
-						`   ✅ **Falar**\n` +
-						`6. Certifique-se de que **não há sobreposições negando** essas permissões\n` +
-						`7. Salve as alterações`;
+						`⚠️ **Problem identified:** The bot has permissions on the server, but there's a **channel override** blocking it!\n\n` +
+						`**Solution:**\n` +
+						`1. Right-click on the voice channel **"${voiceChannel.name}"**\n` +
+						`2. Select **"Edit Channel"**\n` +
+						`3. Go to the **"Permissions"** tab\n` +
+						`4. Find your bot's role (or add the bot if it's not there)\n` +
+						`5. **Enable** the permissions:\n` +
+						`   ✅ **Connect**\n` +
+						`   ✅ **Speak**\n` +
+						`6. Make sure there are **no overrides denying** these permissions\n` +
+						`7. Save the changes`;
 				} else if (!hasGuildConnect || !hasGuildSpeak) {
 					problemDescription =
-						`⚠️ **Problema identificado:** O bot não tem as permissões no servidor!\n\n` +
-						`**Solução:**\n` +
-						`1. Vá em **Configurações do Servidor** → **Funções**\n` +
-						`2. Encontre a função do seu bot (ou crie uma nova)\n` +
-						`3. **Ative** as permissões:\n` +
-						`   ✅ **Conectar**\n` +
-						`   ✅ **Falar**\n` +
-						`4. Certifique-se de que o bot tem essa função atribuída\n` +
-						`5. Salve as alterações`;
+						`⚠️ **Problem identified:** The bot doesn't have permissions on the server!\n\n` +
+						`**Solution:**\n` +
+						`1. Go to **Server Settings** → **Roles**\n` +
+						`2. Find your bot's role (or create a new one)\n` +
+						`3. **Enable** the permissions:\n` +
+						`   ✅ **Connect**\n` +
+						`   ✅ **Speak**\n` +
+						`4. Make sure the bot has this role assigned\n` +
+						`5. Save the changes`;
 				} else {
 					problemDescription =
-						`⚠️ **Problema identificado:** Há uma sobreposição de permissões bloqueando o bot!\n\n` +
-						`**Solução:**\n` +
-						`1. Verifique as permissões do bot no servidor (Funções)\n` +
-						`2. Verifique as permissões do bot no canal específico\n` +
-						`3. Verifique se há sobreposições de permissões que estão bloqueando\n` +
-						`4. Certifique-se de que o bot tem a função correta atribuída`;
+						`⚠️ **Problem identified:** There's a permission override blocking the bot!\n\n` +
+						`**Solution:**\n` +
+						`1. Check the bot's permissions on the server (Roles)\n` +
+						`2. Check the bot's permissions on the specific channel\n` +
+						`3. Check if there are permission overrides that are blocking\n` +
+						`4. Make sure the bot has the correct role assigned`;
 				}
 
 				await interaction.reply({
 					content:
-						`❌ **O bot não tem permissões para entrar e falar no canal de voz!**\n\n` +
-						`**Permissões faltando:** ${missingPerms.join(', ')}\n\n` +
+						`❌ **The bot doesn't have permissions to join and speak in the voice channel!**\n\n` +
+						`**Missing permissions:** ${missingPerms.join(', ')}\n\n` +
 						`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
 						problemDescription,
 					ephemeral: true,
@@ -265,19 +265,19 @@ export default {
 			// Check if channel is full
 			if (voiceChannel.userLimit && voiceChannel.userLimit > 0) {
 				const currentMembers = voiceChannel.members.size;
-				console.log(`👥 Membros no canal: ${currentMembers}/${voiceChannel.userLimit}`);
+				console.log(`👥 Members in channel: ${currentMembers}/${voiceChannel.userLimit}`);
 				if (currentMembers >= voiceChannel.userLimit) {
 					await interaction.reply({
-						content: '❌ O canal de voz está cheio!',
+						content: '❌ The voice channel is full!',
 						ephemeral: true,
 					});
 					return;
 				}
 			}
 		} else {
-			console.error('❌ Bot member não encontrado no servidor!');
+			console.error('❌ Bot member not found on server!');
 			await interaction.reply({
-				content: '❌ Erro: Bot não encontrado no servidor. Tente novamente.',
+				content: '❌ Error: Bot not found on server. Please try again.',
 				ephemeral: true,
 			});
 			return;
@@ -290,7 +290,7 @@ export default {
 			const results = await searchMyInstants(input);
 
 			if (results.length === 0) {
-				await interaction.editReply(`❌ Nenhum resultado encontrado para: **${input}**`);
+				await interaction.editReply(`❌ No results found for: **${input}**`);
 				return;
 			}
 
@@ -300,11 +300,11 @@ export default {
 			const mp3Url = await getMp3Url(firstResult.url);
 
 			if (!mp3Url) {
-				await interaction.editReply(`❌ Não foi possível encontrar o arquivo de áudio para: **${firstResult.name}**`);
+				await interaction.editReply(`❌ Could not find audio file for: **${firstResult.name}**`);
 				return;
 			}
 
-			console.log(`Tocando: ${mp3Url}`);
+			console.log(`Playing: ${mp3Url}`);
 
 			// Check if MP3 URL is accessible before trying to play
 			try {
@@ -312,18 +312,16 @@ export default {
 					timeout: 5000,
 					validateStatus: (status) => status < 400,
 				});
-				console.log(
-					`✅ Arquivo MP3 acessível. Tamanho: ${headResponse.headers['content-length'] || 'desconhecido'} bytes`,
-				);
+				console.log(`✅ MP3 file accessible. Size: ${headResponse.headers['content-length'] || 'unknown'} bytes`);
 			} catch (error) {
-				console.warn('⚠️ Não foi possível verificar o arquivo MP3, mas tentando reproduzir mesmo assim:', error);
+				console.warn('⚠️ Could not verify MP3 file, but trying to play anyway:', error);
 			}
 
-			// Adiciona à fila de reprodução
+			// Add to playback queue
 			try {
 				const guildId = interaction.guild?.id;
 				if (!guildId) {
-					throw new Error('Guild ID não encontrado');
+					throw new Error('Guild ID not found');
 				}
 
 				const queueSize = audioQueue.getQueueSize(guildId);
@@ -335,19 +333,19 @@ export default {
 					channel: voiceChannel,
 				});
 
-				// Mensagem de resposta baseada no estado da fila
+				// Response message based on queue state
 				if (isPlaying || queueSize > 0) {
 					const position = queueSize + 1;
 					await interaction.editReply(
-						`📥 **${firstResult.name}** adicionado à fila!\n` +
+						`📥 **${firstResult.name}** added to queue!\n` +
 							`🔗 ${firstResult.url}\n` +
-							`📍 Posição na fila: ${position}`,
+							`📍 Queue position: ${position}`,
 					);
 				} else {
-					await interaction.editReply(`🎵 Tocando: **${firstResult.name}**\n` + `🔗 ${firstResult.url}`);
+					await interaction.editReply(`🎵 Playing: **${firstResult.name}**\n` + `🔗 ${firstResult.url}`);
 				}
 			} catch (error) {
-				console.error('Erro ao adicionar à fila:', error);
+				console.error('Error adding to queue:', error);
 				const errorMessage = error instanceof Error ? error.message : String(error);
 
 				if (
@@ -356,21 +354,21 @@ export default {
 					errorMessage.includes('Timeout')
 				) {
 					await interaction.editReply(
-						`❌ **Erro ao conectar ao canal de voz!**\n\n` +
-							`**Possíveis causas:**\n` +
-							`• O bot não tem permissão para entrar no canal\n` +
-							`• O bot não tem permissão para falar no canal\n` +
-							`• O canal está cheio\n` +
-							`• Problema de conexão com o servidor de voz\n\n` +
-							`**Solução:** Verifique as permissões do bot no servidor e no canal.`,
+						`❌ **Error connecting to voice channel!**\n\n` +
+							`**Possible causes:**\n` +
+							`• The bot doesn't have permission to join the channel\n` +
+							`• The bot doesn't have permission to speak in the channel\n` +
+							`• The channel is full\n` +
+							`• Connection problem with the voice server\n\n` +
+							`**Solution:** Check the bot's permissions on the server and channel.`,
 					);
 				} else {
-					await interaction.editReply(`❌ Erro ao adicionar à fila: ${errorMessage}`);
+					await interaction.editReply(`❌ Error adding to queue: ${errorMessage}`);
 				}
 			}
 		} catch (error) {
-			console.error('Erro ao executar busca:', error);
-			await interaction.editReply(`❌ Erro ao buscar no myinstants.com. Tente novamente mais tarde.`);
+			console.error('Error executing search:', error);
+			await interaction.editReply(`❌ Error searching myinstants.com. Please try again later.`);
 		}
 	},
 } satisfies Command;

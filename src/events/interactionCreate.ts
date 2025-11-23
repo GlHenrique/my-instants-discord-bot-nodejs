@@ -9,29 +9,29 @@ const __dirname = dirname(__filename);
 const commandsDir = join(__dirname, '../commands');
 
 const commands = await loadCommands(commandsDir);
-console.log(`📋 Comandos carregados: ${[...commands.keys()].join(', ')}`);
+console.log(`📋 Commands loaded: ${[...commands.keys()].join(', ')}`);
 
 export default {
 	name: Events.InteractionCreate,
 	async execute(interaction) {
 		if (interaction.isChatInputCommand()) {
-			console.log(`🔔 Comando recebido: /${interaction.commandName}`);
+			console.log(`🔔 Command received: /${interaction.commandName}`);
 			const command = commands.get(interaction.commandName);
 
 			if (!command) {
 				console.error(
-					`❌ Comando '${interaction.commandName}' não encontrado. Comandos disponíveis: ${[...commands.keys()].join(', ')}`,
+					`❌ Command '${interaction.commandName}' not found. Available commands: ${[...commands.keys()].join(', ')}`,
 				);
-				await interaction.reply({ content: `Comando não encontrado!`, ephemeral: true });
+				await interaction.reply({ content: `Command not found!`, ephemeral: true });
 				return;
 			}
 
 			try {
 				await command.execute(interaction);
 			} catch (error) {
-				console.error(`❌ Erro ao executar comando ${interaction.commandName}:`, error);
+				console.error(`❌ Error executing command ${interaction.commandName}:`, error);
 				if (!interaction.replied && !interaction.deferred) {
-					await interaction.reply({ content: 'Ocorreu um erro ao executar este comando!', ephemeral: true });
+					await interaction.reply({ content: 'An error occurred while executing this command!', ephemeral: true });
 				}
 			}
 		}

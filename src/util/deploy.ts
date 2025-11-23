@@ -18,7 +18,7 @@ const guildId = process.env.GUILD_ID;
 const applicationId = process.env.APPLICATION_ID!;
 
 if (!applicationId) {
-	console.error('❌ Erro: APPLICATION_ID não encontrado no arquivo .env');
+	console.error('❌ Error: APPLICATION_ID not found in .env file');
 	process.exit(1);
 }
 
@@ -26,8 +26,8 @@ let result;
 
 if (guildId) {
 	// Guild commands only for development
-	console.log(`🔧 Modo DESENVOLVIMENTO ativado (Guild ID: ${guildId})`);
-	console.log(`📤 Registrando ${commandData.length} comandos no servidor...`);
+	console.log(`🔧 DEVELOPMENT mode activated (Guild ID: ${guildId})`);
+	console.log(`📤 Registering ${commandData.length} commands on the server...`);
 
 	result = await api.applicationCommands.bulkOverwriteGuildCommands(
 		applicationId,
@@ -35,17 +35,17 @@ if (guildId) {
 		commandData as Parameters<typeof api.applicationCommands.bulkOverwriteGuildCommands>[2],
 	);
 
-	console.log(`✅ Comandos registrados no servidor: ${result.length} comandos`);
-	console.log(`⚡ Os comandos devem aparecer INSTANTANEAMENTE no Discord!`);
-	console.log(`💡 Dica: Se não aparecerem, tente recarregar o Discord (Ctrl+R) ou sair/entrar do servidor`);
+	console.log(`✅ Commands registered on the server: ${result.length} commands`);
+	console.log(`⚡ Commands should appear INSTANTLY on Discord!`);
+	console.log(`💡 Tip: If they don't appear, try reloading Discord (Ctrl+R) or leaving/joining the server`);
 } else {
 	// Global commands for production
-	console.log(`🌍 Modo PRODUÇÃO ativado (comandos globais)`);
-	console.log(`📤 Registrando ${commandData.length} comandos globalmente...`);
+	console.log(`🌍 PRODUCTION mode activated (global commands)`);
+	console.log(`📤 Registering ${commandData.length} commands globally...`);
 
 	result = await api.applicationCommands.bulkOverwriteGlobalCommands(applicationId, commandData);
 
-	console.log(`✅ Comandos globais registrados: ${result.length} comandos`);
-	console.log(`⏱️  Nota: Os comandos podem levar até 1 hora para aparecer em todos os servidores`);
-	console.log(`💡 Para atualização instantânea, defina GUILD_ID no arquivo .env`);
+	console.log(`✅ Global commands registered: ${result.length} commands`);
+	console.log(`⏱️  Note: Commands may take up to 1 hour to appear on all servers`);
+	console.log(`💡 For instant updates, set GUILD_ID in the .env file`);
 }

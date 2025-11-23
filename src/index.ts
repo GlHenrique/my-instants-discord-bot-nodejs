@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { loadEvents } from './util/loaders.js';
 
-console.log('🚀 Iniciando bot Discord...');
+console.log('🚀 Starting Discord bot...');
 
 // Initialize the client
 const client = new Client({
@@ -15,7 +15,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const eventsDir = join(__dirname, 'events');
 const events = await loadEvents(eventsDir);
-console.log(`✅ ${events.length} evento(s) carregado(s)`);
+console.log(`✅ ${events.length} event(s) loaded`);
 
 // Register the event handlers
 for (const event of events) {
@@ -30,11 +30,11 @@ for (const event of events) {
 
 // Handle login errors
 client.on('error', (error) => {
-	console.error('❌ Erro no cliente Discord:', error);
+	console.error('❌ Discord client error:', error);
 });
 
 client.on('warn', (warning) => {
-	console.warn('⚠️ Aviso do Discord:', warning);
+	console.warn('⚠️ Discord warning:', warning);
 });
 
 client.once(Events.ClientReady, (client) => {
@@ -43,9 +43,9 @@ client.once(Events.ClientReady, (client) => {
 
 // Login to the client
 if (!process.env.DISCORD_TOKEN) {
-	console.error('❌ Erro: DISCORD_TOKEN não encontrado no arquivo .env');
+	console.error('❌ Error: DISCORD_TOKEN not found in .env file');
 	process.exit(1);
 }
 
-console.log('🔐 Conectando ao Discord...');
+console.log('🔐 Connecting to Discord...');
 void client.login(process.env.DISCORD_TOKEN);

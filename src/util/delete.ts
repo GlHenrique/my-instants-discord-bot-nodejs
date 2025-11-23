@@ -9,7 +9,7 @@ const guildId = process.env.GUILD_ID;
 const applicationId = process.env.APPLICATION_ID!;
 
 if (!applicationId) {
-	console.error('❌ Erro: APPLICATION_ID não encontrado no arquivo .env');
+	console.error('❌ Error: APPLICATION_ID not found in .env file');
 	process.exit(1);
 }
 
@@ -22,40 +22,40 @@ async function deleteCommands() {
 		const existingCommands = await listCommands();
 
 		if (existingCommands.length === 0) {
-			console.log('✅ Não há comandos para deletar.');
+			console.log('✅ No commands to delete.');
 			return;
 		}
 
 		if (commandNamesToDelete.length === 0) {
 			// Delete all commands
 			if (guildId) {
-				console.log(`\n🔧 Modo DESENVOLVIMENTO (Guild ID: ${guildId})`);
-				console.log(`🗑️  Deletando TODOS os comandos do servidor...`);
+				console.log(`\n🔧 DEVELOPMENT mode (Guild ID: ${guildId})`);
+				console.log(`🗑️  Deleting ALL server commands...`);
 
 				await api.applicationCommands.bulkOverwriteGuildCommands(applicationId, guildId, []);
 
-				console.log(`✅ Todos os comandos do servidor foram deletados!`);
-				console.log(`⚡ Os comandos devem desaparecer INSTANTANEAMENTE no Discord!`);
+				console.log(`✅ All server commands deleted!`);
+				console.log(`⚡ Commands should disappear INSTANTLY on Discord!`);
 			} else {
-				console.log(`\n🌍 Modo PRODUÇÃO (comandos globais)`);
-				console.log(`🗑️  Deletando TODOS os comandos globais...`);
+				console.log(`\n🌍 PRODUCTION mode (global commands)`);
+				console.log(`🗑️  Deleting ALL global commands...`);
 
 				await api.applicationCommands.bulkOverwriteGlobalCommands(applicationId, []);
 
-				console.log(`✅ Todos os comandos globais foram deletados!`);
-				console.log(`⏱️  Nota: Pode levar até 1 hora para os comandos desaparecerem em todos os servidores`);
+				console.log(`✅ All global commands deleted!`);
+				console.log(`⏱️  Note: It may take up to 1 hour for commands to disappear on all servers`);
 			}
 		} else {
 			// Delete specific commands
-			console.log(`\n🗑️  Deletando comandos específicos: ${commandNamesToDelete.join(', ')}`);
+			console.log(`\n🗑️  Deleting specific commands: ${commandNamesToDelete.join(', ')}`);
 
 			const commandsToKeep = existingCommands.filter((cmd) => !commandNamesToDelete.includes(cmd.name));
 
 			const deletedCount = existingCommands.length - commandsToKeep.length;
 
 			if (deletedCount === 0) {
-				console.log('⚠️  Nenhum dos comandos especificados foi encontrado.');
-				console.log('💡 Use o nome exato do comando (sem /)');
+				console.log('⚠️  None of the specified commands were found.');
+				console.log('💡 Use the exact command name (without /)');
 				return;
 			}
 
@@ -75,31 +75,31 @@ async function deleteCommands() {
 			});
 
 			if (guildId) {
-				console.log(`🔧 Modo DESENVOLVIMENTO (Guild ID: ${guildId})`);
+				console.log(`🔧 DEVELOPMENT mode (Guild ID: ${guildId})`);
 				await api.applicationCommands.bulkOverwriteGuildCommands(
 					applicationId,
 					guildId,
 					commandsData as unknown as Parameters<typeof api.applicationCommands.bulkOverwriteGuildCommands>[2],
 				);
-				console.log(`✅ ${deletedCount} comando(s) deletado(s) do servidor!`);
-				console.log(`⚡ Os comandos devem desaparecer INSTANTANEAMENTE no Discord!`);
+				console.log(`✅ ${deletedCount} command(s) deleted from server!`);
+				console.log(`⚡ Commands should disappear INSTANTLY on Discord!`);
 			} else {
-				console.log(`🌍 Modo PRODUÇÃO (comandos globais)`);
+				console.log(`🌍 PRODUCTION mode (global commands)`);
 				await api.applicationCommands.bulkOverwriteGlobalCommands(
 					applicationId,
 					commandsData as unknown as Parameters<typeof api.applicationCommands.bulkOverwriteGlobalCommands>[1],
 				);
-				console.log(`✅ ${deletedCount} comando(s) deletado(s) globalmente!`);
-				console.log(`⏱️  Nota: Pode levar até 1 hora para os comandos desaparecerem em todos os servidores`);
+				console.log(`✅ ${deletedCount} command(s) deleted globally!`);
+				console.log(`⏱️  Note: It may take up to 1 hour for commands to disappear on all servers`);
 			}
 
-			console.log(`📋 Comandos restantes: ${commandsToKeep.length}`);
+			console.log(`📋 Remaining commands: ${commandsToKeep.length}`);
 			if (commandsToKeep.length > 0) {
 				console.log(`   • ${commandsToKeep.map((c) => c.name).join(', ')}`);
 			}
 		}
 	} catch (error) {
-		console.error('❌ Erro ao deletar comandos:', error);
+		console.error('❌ Error deleting commands:', error);
 		process.exit(1);
 	}
 }
