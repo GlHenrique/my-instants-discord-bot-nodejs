@@ -34,7 +34,6 @@
 		"eslint-formatter-pretty": "^7.0.0",
 		"nodemon": "^3.1.7",
 		"prettier": "^3.6.2",
-		"tsx": "^4.19.2",
 		"typescript": "~5.9.3",
 		"zod": "^3.25.76"
 	},
