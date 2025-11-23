@@ -15,7 +15,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const eventsDir = join(__dirname, 'events');
 const events = await loadEvents(eventsDir);
-console.log(events);
 console.log(`✅ ${events.length} evento(s) carregado(s)`);
 
 // Register the event handlers

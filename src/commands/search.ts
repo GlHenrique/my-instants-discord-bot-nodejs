@@ -273,43 +273,20 @@ async function playAudio(channel: VoiceBasedChannel, mp3Url: string): Promise<vo
 			}
 		};
 
-		// Listener for all connection states (debug and disconnect handling)
-		connection.on('stateChange', (oldState, newState) => {
-			console.log(`🔄 Mudança de estado da conexão: ${oldState.status} → ${newState.status}`);
-
-			// Detect disconnections
-			if (newState.status === VoiceConnectionStatus.Disconnected) {
-				console.log(
-					`🔌 Desconectado do canal de voz. Estado anterior: ${oldState.status}, novo estado: ${newState.status}`,
-				);
-				// If disconnected before being ready, might be a permission issue
-				if (!isResolved && oldState.status !== VoiceConnectionStatus.Ready) {
-					console.error('❌ Conexão desconectada antes de estar pronta - possível problema de permissão');
-					// Clear timers and connection
-					if (disconnectTimers.has(guildId)) {
-						clearTimeout(disconnectTimers.get(guildId)!);
-						disconnectTimers.delete(guildId);
-					}
-					activeConnections.delete(guildId);
-					safeReject(new Error('Conexão perdida - verifique as permissões do bot no canal de voz'));
-				} else if (oldState.status === VoiceConnectionStatus.Ready) {
-					// If already ready, just resolve (audio finished or manual disconnect)
-					// Don't destroy here - let the 5 minute timer handle it
-					// But if it was a manual disconnect, clear the timers
-					if (disconnectTimers.has(guildId)) {
-						clearTimeout(disconnectTimers.get(guildId)!);
-						disconnectTimers.delete(guildId);
-					}
-					activeConnections.delete(guildId);
-					safeResolve();
-				}
-			}
-		});
-
-		connection.on(VoiceConnectionStatus.Ready, () => {
-			console.log('✅ Conexão de voz estabelecida com sucesso!');
+		// Function to create and play audio (reusable for both Ready event and immediate playback)
+		const createAndPlayAudio = () => {
 			try {
 				cleanup(); // Clear timeout when connection is ready
+
+				// Stop any existing player before creating a new one
+				const existingSubscription =
+					connection.state.status === VoiceConnectionStatus.Ready ? connection.state.subscription : null;
+				if (existingSubscription) {
+					console.log('🛑 Parando player anterior...');
+					existingSubscription.player.stop();
+					existingSubscription.unsubscribe();
+				}
+
 				const player = createAudioPlayer();
 				console.log('🎵 Player de áudio criado');
 
@@ -408,7 +385,52 @@ async function playAudio(channel: VoiceBasedChannel, mp3Url: string): Promise<vo
 				connection.destroy();
 				safeReject(error as Error);
 			}
+		};
+
+		// Listener for all connection states (debug and disconnect handling)
+		connection.on('stateChange', (oldState, newState) => {
+			console.log(`🔄 Mudança de estado da conexão: ${oldState.status} → ${newState.status}`);
+
+			// Detect disconnections
+			if (newState.status === VoiceConnectionStatus.Disconnected) {
+				console.log(
+					`🔌 Desconectado do canal de voz. Estado anterior: ${oldState.status}, novo estado: ${newState.status}`,
+				);
+				// If disconnected before being ready, might be a permission issue
+				if (!isResolved && oldState.status !== VoiceConnectionStatus.Ready) {
+					console.error('❌ Conexão desconectada antes de estar pronta - possível problema de permissão');
+					// Clear timers and connection
+					if (disconnectTimers.has(guildId)) {
+						clearTimeout(disconnectTimers.get(guildId)!);
+						disconnectTimers.delete(guildId);
+					}
+					activeConnections.delete(guildId);
+					safeReject(new Error('Conexão perdida - verifique as permissões do bot no canal de voz'));
+				} else if (oldState.status === VoiceConnectionStatus.Ready) {
+					// If already ready, just resolve (audio finished or manual disconnect)
+					// Don't destroy here - let the 5 minute timer handle it
+					// But if it was a manual disconnect, clear the timers
+					if (disconnectTimers.has(guildId)) {
+						clearTimeout(disconnectTimers.get(guildId)!);
+						disconnectTimers.delete(guildId);
+					}
+					activeConnections.delete(guildId);
+					safeResolve();
+				}
+			}
 		});
+
+		// Check if connection is already ready (for reusing existing connections)
+		if (connection.state.status === VoiceConnectionStatus.Ready) {
+			console.log('✅ Conexão já está pronta - reproduzindo imediatamente');
+			createAndPlayAudio();
+		} else {
+			// Wait for Ready event if connection is not ready yet
+			connection.on(VoiceConnectionStatus.Ready, () => {
+				console.log('✅ Conexão de voz estabelecida com sucesso!');
+				createAndPlayAudio();
+			});
+		}
 
 		connection.on(VoiceConnectionStatus.Connecting, () => {
 			console.log('🔄 Conectando ao canal de voz...');

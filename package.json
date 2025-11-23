@@ -5,9 +5,11 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"build": "tsc",
+		"build": "rm -rf dist && tsc",
 		"lint": "prettier --check . && eslint --ext .ts --format=pretty src",
 		"deploy": "node --env-file=.env dist/util/deploy.js",
+		"delete-commands": "node --env-file=.env dist/util/delete.js",
+		"list-commands": "node --env-file=.env dist/util/listCommands.js",
 		"format": "prettier --write . && eslint --ext .ts --fix --format=pretty src",
 		"start": "node --env-file=.env dist/index.js",
 		"dev": "nodemon"
