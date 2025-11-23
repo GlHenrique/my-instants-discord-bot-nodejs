@@ -45,9 +45,6 @@ if (ffmpegStatic && typeof ffmpegStatic === 'string') {
 	process.env.FFMPEG_PATH = ffmpegStatic;
 }
 
-// Opusscript is automatically used by @discordjs/voice if installed
-// No need to import it manually
-
 interface SearchResult {
 	name: string;
 	url: string;
@@ -204,7 +201,6 @@ async function playAudio(channel: VoiceBasedChannel, mp3Url: string): Promise<vo
 
 	// If connection doesn't exist or was destroyed, create a new one
 	if (!connection || connection.state.status === VoiceConnectionStatus.Destroyed) {
-		console.log('🆕 Criando nova conexão de voz...');
 		connection = joinVoiceChannel({
 			channelId: channel.id,
 			guildId: channel.guild.id,
@@ -215,7 +211,6 @@ async function playAudio(channel: VoiceBasedChannel, mp3Url: string): Promise<vo
 		activeConnections.set(guildId, connection);
 		console.log(`✅ Nova conexão criada. Estado inicial: ${connection.state.status}`);
 	} else {
-		console.log('♻️ Reutilizando conexão existente');
 		// If connection exists but is in a different channel, we need to reconnect
 		if (connection.joinConfig.channelId !== channel.id) {
 			console.log('🔄 Reconectando ao novo canal...');
@@ -234,7 +229,6 @@ async function playAudio(channel: VoiceBasedChannel, mp3Url: string): Promise<vo
 	// Try to download audio as stream to ensure correct processing
 	let audioStream: Readable | string = mp3Url;
 	try {
-		console.log('📥 Baixando áudio como stream...');
 		const response = await axios.get(mp3Url, {
 			responseType: 'stream',
 			timeout: 10000,
@@ -298,13 +292,10 @@ async function playAudio(channel: VoiceBasedChannel, mp3Url: string): Promise<vo
 				});
 
 				console.log(`🎶 Recurso de áudio criado (tipo: ${typeof audioStream === 'string' ? 'URL' : 'Stream'})`);
-				console.log('✅ Opusscript será usado automaticamente pelo @discordjs/voice (já instalado)');
 				console.log(`🎶 Recurso de áudio criado para: ${mp3Url}`);
-				console.log(`🔧 FFmpeg path: ${process.env.FFMPEG_PATH || 'não configurado'}`);
 
 				// Configure volume (100% = 1.0)
 				resource.volume?.setVolume(1.0);
-				console.log(`🔊 Volume configurado: ${resource.volume?.volume ?? 'N/A'}`);
 
 				// Verify connection is really ready before playing
 				if (connection.state.status !== VoiceConnectionStatus.Ready) {
@@ -340,8 +331,7 @@ async function playAudio(channel: VoiceBasedChannel, mp3Url: string): Promise<vo
 				});
 
 				player.on('error', (error) => {
-					console.error('❌ Erro no player de áudio:', error);
-					console.error('Detalhes do erro:', {
+					console.error('Erro no player de áudio:', {
 						name: error instanceof Error ? error.name : 'Unknown',
 						message: error instanceof Error ? error.message : String(error),
 						stack: error instanceof Error ? error.stack : undefined,
@@ -422,12 +412,10 @@ async function playAudio(channel: VoiceBasedChannel, mp3Url: string): Promise<vo
 
 		// Check if connection is already ready (for reusing existing connections)
 		if (connection.state.status === VoiceConnectionStatus.Ready) {
-			console.log('✅ Conexão já está pronta - reproduzindo imediatamente');
 			createAndPlayAudio();
 		} else {
 			// Wait for Ready event if connection is not ready yet
 			connection.on(VoiceConnectionStatus.Ready, () => {
-				console.log('✅ Conexão de voz estabelecida com sucesso!');
 				createAndPlayAudio();
 			});
 		}
@@ -436,13 +424,8 @@ async function playAudio(channel: VoiceBasedChannel, mp3Url: string): Promise<vo
 			console.log('🔄 Conectando ao canal de voz...');
 		});
 
-		connection.on(VoiceConnectionStatus.Signalling, () => {
-			console.log('📡 Sinalizando com o servidor de voz...');
-		});
-
 		connection.on('error', (error) => {
-			console.error('❌ Erro na conexão de voz:', error);
-			console.error('Detalhes do erro:', {
+			console.error('Erro na conexão de voz:', {
 				name: error instanceof Error ? error.name : 'Unknown',
 				message: error instanceof Error ? error.message : String(error),
 				stack: error instanceof Error ? error.stack : undefined,
@@ -483,12 +466,12 @@ async function playAudio(channel: VoiceBasedChannel, mp3Url: string): Promise<vo
 
 export default {
 	data: {
-		name: 'search',
-		description: 'Search for a song.',
+		name: 'mi',
+		description: 'Search for a myinstants audio.',
 		options: [
 			{
-				name: 'query',
-				description: 'The search query for the song.',
+				name: 'input',
+				description: 'The search query for the myinstants audio.',
 				type: 3, // STRING type
 				required: true,
 			},
@@ -496,8 +479,8 @@ export default {
 	},
 	async execute(interaction) {
 		// Get the query from the interaction
-		const query = interaction.options.getString('query', true);
-		console.log(`Pesquisando por: ${query}`);
+		const input = interaction.options.getString('input', true);
+		console.log(`Pesquisando por: ${input}`);
 
 		// Check if user is in a voice channel
 		const member = interaction.member;
@@ -626,10 +609,10 @@ export default {
 		await interaction.deferReply();
 
 		try {
-			const results = await searchMyInstants(query);
+			const results = await searchMyInstants(input);
 
 			if (results.length === 0) {
-				await interaction.editReply(`❌ Nenhum resultado encontrado para: **${query}**`);
+				await interaction.editReply(`❌ Nenhum resultado encontrado para: **${input}**`);
 				return;
 			}
 
@@ -644,7 +627,7 @@ export default {
 				return;
 			}
 
-			console.log(`Tocando MP3: ${mp3Url}`);
+			console.log(`Tocando: ${mp3Url}`);
 
 			// Check if MP3 URL is accessible before trying to play
 			try {
