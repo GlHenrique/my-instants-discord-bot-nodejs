@@ -1,25 +1,42 @@
-# Use Node.js 22 (LTS) como imagem base
-FROM node:22-slim
+# Stage 1: Build - Compilar TypeScript
+FROM node:22-slim AS builder
 
-# Instalar dependências do sistema necessárias para FFmpeg e opus
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
-
-# Criar diretório de trabalho
 WORKDIR /app
 
 # Copiar arquivos de dependências
 COPY package*.json ./
 
-# Instalar dependências
-RUN npm ci --only=production
+# Instalar TODAS as dependências (incluindo devDependencies para compilar)
+RUN npm ci --no-audit --no-fund \
+    && npm cache clean --force
 
 # Copiar código fonte
 COPY . .
 
 # Compilar TypeScript
 RUN npm run build
+
+# Stage 2: Production - Imagem final otimizada
+FROM node:22-slim
+
+# Instalar apenas FFmpeg (necessário para processamento de áudio)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/*
+
+WORKDIR /app
+
+# Copiar arquivos de dependências
+COPY package*.json ./
+
+# Instalar APENAS dependências de produção
+RUN npm ci --only=production --no-audit --no-fund \
+    && npm cache clean --force
+
+# Copiar código compilado do stage de build
+COPY --from=builder /app/dist ./dist
 
 # Expor porta (opcional, para health checks)
 EXPOSE 3000
