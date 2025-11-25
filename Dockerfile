@@ -41,6 +41,11 @@ COPY --from=builder /app/dist ./dist
 # Expor porta (opcional, para health checks)
 EXPOSE 3000
 
+# Criar script de entrada que executa o bot diretamente
+# (sem --env-file pois docker-compose já carrega as variáveis)
+RUN echo '#!/bin/sh\nnode dist/index.js' > /app/entrypoint.sh && \
+    chmod +x /app/entrypoint.sh
+
 # Comando para iniciar a aplicação
-CMD ["npm", "start"]
+ENTRYPOINT ["/app/entrypoint.sh"]
 
