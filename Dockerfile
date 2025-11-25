@@ -41,10 +41,6 @@ COPY --from=builder /app/dist ./dist
 # Expor porta (opcional, para health checks)
 EXPOSE 3000
 
-# Criar script de entrada que faz deploy e inicia o bot
-RUN echo '#!/bin/sh\nnpm run deploy && npm start' > /app/entrypoint.sh && \
-    chmod +x /app/entrypoint.sh
-
-# Comando para iniciar a aplicação (faz deploy antes de iniciar)
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Comando para iniciar a aplicação
+CMD ["npm", "start"]
 
