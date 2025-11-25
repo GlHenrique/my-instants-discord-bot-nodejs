@@ -19,6 +19,6 @@ coverage
 README.md
 LICENSE
 nodemon.json
-tsconfig*.json
+tsconfig.eslint.json
 *.tsbuildinfo
 
