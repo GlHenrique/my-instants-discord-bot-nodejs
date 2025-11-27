@@ -116,10 +116,11 @@ docker-compose logs -f bot
 - Add user to docker group: `sudo usermod -aG docker $USER`
 - Log out and log in again
 
-### Error: "docker-compose: command not found"
+### Error: "docker-compose: command not found" or "unknown shorthand flag: 'd' in -d"
 
-- Install Docker Compose on AWS machine
-- Or use `docker compose` (without hyphen) if it's a newer version
+- The workflow automatically detects and uses the correct Docker Compose command (`docker-compose` or `docker compose`)
+- If you still get this error, verify that Docker is installed and the user has permissions
+- For newer Docker versions, `docker compose` (without hyphen) is used automatically as a plugin
 
 ### Error: "Image pull failed"
 

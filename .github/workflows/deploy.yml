@@ -58,6 +58,14 @@ jobs:
             echo "📁 Navigating to project directory..."
             cd ${{ secrets.AWS_PROJECT_PATH }}
             
+            # Detect which docker compose command is available
+            if command -v docker-compose &> /dev/null; then
+              DOCKER_COMPOSE="docker-compose"
+            else
+              DOCKER_COMPOSE="docker compose"
+            fi
+            echo "📦 Using: $DOCKER_COMPOSE"
+            
             # Check if docker-compose.prod.yml exists, otherwise use docker-compose.yml
             COMPOSE_FILE="docker-compose.yml"
             if [ -f "docker-compose.prod.yml" ]; then
@@ -68,16 +76,16 @@ jobs:
             fi
             
             echo "🛑 Stopping existing containers..."
-            docker-compose -f $COMPOSE_FILE down || true
+            $DOCKER_COMPOSE -f $COMPOSE_FILE down || true
             
             echo "🚀 Starting containers with new image..."
-            docker-compose -f $COMPOSE_FILE up -d
+            $DOCKER_COMPOSE -f $COMPOSE_FILE up -d
             
             echo "🧹 Cleaning up unused old images..."
             docker image prune -f
             
             echo "✅ Deployment completed successfully!"
-            docker-compose -f $COMPOSE_FILE ps
+            $DOCKER_COMPOSE -f $COMPOSE_FILE ps
             
             echo "🔓 Logging out from Docker Hub..."
             docker logout
@@ -87,14 +95,22 @@ jobs:
         run: |
           ssh ${{ secrets.AWS_USER }}@${{ secrets.AWS_HOST }} << 'EOF'
             cd ${{ secrets.AWS_PROJECT_PATH }}
+            
+            # Detect which docker compose command is available
+            if command -v docker-compose &> /dev/null; then
+              DOCKER_COMPOSE="docker-compose"
+            else
+              DOCKER_COMPOSE="docker compose"
+            fi
+            
             COMPOSE_FILE="docker-compose.yml"
             if [ -f "docker-compose.prod.yml" ]; then
               COMPOSE_FILE="docker-compose.prod.yml"
             fi
             
             echo "📊 Container status:"
-            docker-compose -f $COMPOSE_FILE ps
+            $DOCKER_COMPOSE -f $COMPOSE_FILE ps
             echo ""
             echo "📝 Last log lines:"
-            docker-compose -f $COMPOSE_FILE logs --tail=20
+            $DOCKER_COMPOSE -f $COMPOSE_FILE logs --tail=20
           EOF
