@@ -47,16 +47,22 @@ jobs:
 
       - name: Deploy to AWS
         run: |
-          ssh ${{ secrets.AWS_USER }}@${{ secrets.AWS_HOST }} << EOF
+          ssh ${{ secrets.AWS_USER }}@${{ secrets.AWS_HOST }} bash -s << 'REMOTE_SCRIPT'
             set -e
+            DOCKER_USERNAME='${{ secrets.DOCKER_USERNAME }}'
+            DOCKER_PASSWORD='${{ secrets.DOCKER_PASSWORD }}'
+            DOCKER_IMAGE='${{ env.DOCKER_IMAGE }}'
+            DOCKER_TAG='${{ env.DOCKER_TAG }}'
+            PROJECT_PATH='${{ secrets.AWS_PROJECT_PATH }}'
+            
             echo "🔐 Logging in to Docker Hub..."
-            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
             
             echo "🔄 Pulling new image..."
-            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+            docker pull "$DOCKER_USERNAME/$DOCKER_IMAGE:$DOCKER_TAG"
             
             echo "📁 Navigating to project directory..."
-            cd ${{ secrets.AWS_PROJECT_PATH }}
+            cd "$PROJECT_PATH"
             
             # Detect which docker compose command is available
             if command -v docker-compose &> /dev/null; then
@@ -76,25 +82,26 @@ jobs:
             fi
             
             echo "🛑 Stopping existing containers..."
-            $DOCKER_COMPOSE -f $COMPOSE_FILE down || true
+            $DOCKER_COMPOSE -f "$COMPOSE_FILE" down || true
             
             echo "🚀 Starting containers with new image..."
-            $DOCKER_COMPOSE -f $COMPOSE_FILE up -d
+            $DOCKER_COMPOSE -f "$COMPOSE_FILE" up -d
             
             echo "🧹 Cleaning up unused old images..."
             docker image prune -f
             
             echo "✅ Deployment completed successfully!"
-            $DOCKER_COMPOSE -f $COMPOSE_FILE ps
+            $DOCKER_COMPOSE -f "$COMPOSE_FILE" ps
             
             echo "🔓 Logging out from Docker Hub..."
             docker logout
-          EOF
+          REMOTE_SCRIPT
 
       - name: Verify deployment status
         run: |
-          ssh ${{ secrets.AWS_USER }}@${{ secrets.AWS_HOST }} << 'EOF'
-            cd ${{ secrets.AWS_PROJECT_PATH }}
+          ssh ${{ secrets.AWS_USER }}@${{ secrets.AWS_HOST }} bash -s << 'REMOTE_SCRIPT'
+            PROJECT_PATH='${{ secrets.AWS_PROJECT_PATH }}'
+            cd "$PROJECT_PATH"
             
             # Detect which docker compose command is available
             if command -v docker-compose &> /dev/null; then
@@ -109,8 +116,8 @@ jobs:
             fi
             
             echo "📊 Container status:"
-            $DOCKER_COMPOSE -f $COMPOSE_FILE ps
+            $DOCKER_COMPOSE -f "$COMPOSE_FILE" ps
             echo ""
             echo "📝 Last log lines:"
-            $DOCKER_COMPOSE -f $COMPOSE_FILE logs --tail=20
-          EOF
+            $DOCKER_COMPOSE -f "$COMPOSE_FILE" logs --tail=20
+          REMOTE_SCRIPT
