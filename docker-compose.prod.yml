@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   bot:
-    image: SEU_USUARIO_DOCKER/my-instants-bot:latest
+    image: glenio599/my-instants-bot:latest
     container_name: my-instants-bot
     restart: unless-stopped
     env_file:
@@ -16,4 +16,3 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
