@@ -17,6 +17,8 @@ This guide explains how to set up automatic bot deployment using GitHub Actions.
 4. Create a **New Access Token** (don't use your password directly)
 5. Note the created token
 
+**Note**: The workflow automatically handles login to Docker Hub on the AWS machine when pulling private images. If your image is set to private, make sure the `DOCKER_USERNAME` and `DOCKER_PASSWORD` secrets are correctly configured.
+
 ## Step 2: Configure GitHub Secrets
 
 1. Go to your repository on GitHub
@@ -25,14 +27,14 @@ This guide explains how to set up automatic bot deployment using GitHub Actions.
 
 ### Required Secrets
 
-| Secret | Description | Example |
-|--------|-------------|---------|
-| `DOCKER_USERNAME` | Your Docker Hub username | `myuser` |
-| `DOCKER_PASSWORD` | Docker Hub access token | `dckr_pat_xxxxx...` |
-| `AWS_SSH_PRIVATE_KEY` | SSH private key (full content) | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
-| `AWS_HOST` | IP or hostname of AWS machine | `54.123.45.67` or `ec2-54-123-45-67.compute-1.amazonaws.com` |
-| `AWS_USER` | SSH user on AWS | `ubuntu` or `ec2-user` |
-| `AWS_PROJECT_PATH` | Full project path on AWS | `/home/ubuntu/my-instants-bot` |
+| Secret                | Description                    | Example                                                      |
+| --------------------- | ------------------------------ | ------------------------------------------------------------ |
+| `DOCKER_USERNAME`     | Your Docker Hub username       | `myuser`                                                     |
+| `DOCKER_PASSWORD`     | Docker Hub access token        | `dckr_pat_xxxxx...`                                          |
+| `AWS_SSH_PRIVATE_KEY` | SSH private key (full content) | `-----BEGIN OPENSSH PRIVATE KEY-----...`                     |
+| `AWS_HOST`            | IP or hostname of AWS machine  | `54.123.45.67` or `ec2-54-123-45-67.compute-1.amazonaws.com` |
+| `AWS_USER`            | SSH user on AWS                | `ubuntu` or `ec2-user`                                       |
+| `AWS_PROJECT_PATH`    | Full project path on AWS       | `/home/ubuntu/my-instants-bot`                               |
 
 ### How to Get the SSH Private Key
 
@@ -64,7 +66,7 @@ cd /path/to/project
 ```yaml
 services:
   bot:
-    image: YOUR_DOCKER_USER/my-instants-bot:latest  # Replace YOUR_DOCKER_USER
+    image: YOUR_DOCKER_USER/my-instants-bot:latest # Replace YOUR_DOCKER_USER
     # Remove the 'build' section
 ```
 
@@ -124,6 +126,8 @@ docker-compose logs -f bot
 - Verify that `DOCKER_USERNAME` and `DOCKER_PASSWORD` are correct
 - Verify that the image was created on Docker Hub
 - Verify that the image name in `docker-compose.yml` is correct
+- If your image is private, the workflow automatically logs in to Docker Hub before pulling. Make sure the credentials are correct
+- Check if you have access to the private repository on Docker Hub
 
 ### Workflow doesn't trigger
 
@@ -155,4 +159,3 @@ If you prefer to use AWS ECR instead of Docker Hub:
 - ✅ Rotate tokens regularly
 - ✅ Use SSH keys specific for CI/CD
 - ✅ Limit SSH key permissions when possible
-

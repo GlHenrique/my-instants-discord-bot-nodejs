@@ -47,8 +47,11 @@ jobs:
 
       - name: Deploy to AWS
         run: |
-          ssh ${{ secrets.AWS_USER }}@${{ secrets.AWS_HOST }} << 'EOF'
+          ssh ${{ secrets.AWS_USER }}@${{ secrets.AWS_HOST }} << EOF
             set -e
+            echo "🔐 Logging in to Docker Hub..."
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            
             echo "🔄 Pulling new image..."
             docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
             
@@ -75,6 +78,9 @@ jobs:
             
             echo "✅ Deployment completed successfully!"
             docker-compose -f $COMPOSE_FILE ps
+            
+            echo "🔓 Logging out from Docker Hub..."
+            docker logout
           EOF
 
       - name: Verify deployment status

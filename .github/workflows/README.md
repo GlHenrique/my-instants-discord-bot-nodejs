@@ -38,11 +38,15 @@ The workflow executes the following steps:
 2. 🏗️ Builds Docker image using Docker Buildx
 3. 📤 Pushes image to registry
 4. 🔐 Connects via SSH to AWS machine
-5. 📥 Pulls the new image
-6. 🛑 Stops existing containers
-7. 🚀 Starts containers with the new image
-8. 🧹 Cleans up unused old images
-9. ✅ Verifies deployment status
+5. 🔑 Logs in to Docker Hub (for private images)
+6. 📥 Pulls the new image
+7. 🛑 Stops existing containers
+8. 🚀 Starts containers with the new image
+9. 🧹 Cleans up unused old images
+10. 🔓 Logs out from Docker Hub
+11. ✅ Verifies deployment status
+
+**Note**: The workflow automatically handles Docker Hub authentication when pulling private images. Make sure your `DOCKER_USERNAME` and `DOCKER_PASSWORD` secrets are correctly configured.
 
 ### When the Workflow Triggers
 
