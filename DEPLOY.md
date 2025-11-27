@@ -1,158 +1,158 @@
-# Guia de Deploy com CI/CD
+# CI/CD Deployment Guide
 
-Este guia explica como configurar o deploy automático do bot usando GitHub Actions.
+This guide explains how to set up automatic bot deployment using GitHub Actions.
 
-## Pré-requisitos
+## Prerequisites
 
-1. ✅ Bot já rodando na máquina AWS
-2. ✅ Docker e Docker Compose instalados na máquina AWS
-3. ✅ Conta no Docker Hub (ou AWS ECR configurado)
-4. ✅ Acesso SSH à máquina AWS
+1. ✅ Bot already running on AWS machine
+2. ✅ Docker and Docker Compose installed on AWS machine
+3. ✅ Docker Hub account (or AWS ECR configured)
+4. ✅ SSH access to AWS machine
 
-## Passo 1: Configurar Docker Hub
+## Step 1: Configure Docker Hub
 
-1. Acesse [Docker Hub](https://hub.docker.com/)
-2. Crie uma conta ou faça login
-3. Vá em **Account Settings** > **Security**
-4. Crie um **New Access Token** (não use sua senha diretamente)
-5. Anote o token criado
+1. Go to [Docker Hub](https://hub.docker.com/)
+2. Create an account or log in
+3. Go to **Account Settings** > **Security**
+4. Create a **New Access Token** (don't use your password directly)
+5. Note the created token
 
-## Passo 2: Configurar Secrets no GitHub
+## Step 2: Configure GitHub Secrets
 
-1. Vá para o repositório no GitHub
-2. Clique em **Settings** > **Secrets and variables** > **Actions**
-3. Clique em **New repository secret** e adicione:
+1. Go to your repository on GitHub
+2. Click **Settings** > **Secrets and variables** > **Actions**
+3. Click **New repository secret** and add:
 
-### Secrets Obrigatórios
+### Required Secrets
 
-| Secret | Descrição | Exemplo |
-|--------|-----------|---------|
-| `DOCKER_USERNAME` | Seu usuário do Docker Hub | `meuusuario` |
-| `DOCKER_PASSWORD` | Token de acesso do Docker Hub | `dckr_pat_xxxxx...` |
-| `AWS_SSH_PRIVATE_KEY` | Chave privada SSH (conteúdo completo) | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
-| `AWS_HOST` | IP ou hostname da máquina AWS | `54.123.45.67` ou `ec2-54-123-45-67.compute-1.amazonaws.com` |
-| `AWS_USER` | Usuário SSH na AWS | `ubuntu` ou `ec2-user` |
-| `AWS_PROJECT_PATH` | Caminho completo do projeto na AWS | `/home/ubuntu/my-instants-bot` |
+| Secret | Description | Example |
+|--------|-------------|---------|
+| `DOCKER_USERNAME` | Your Docker Hub username | `myuser` |
+| `DOCKER_PASSWORD` | Docker Hub access token | `dckr_pat_xxxxx...` |
+| `AWS_SSH_PRIVATE_KEY` | SSH private key (full content) | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
+| `AWS_HOST` | IP or hostname of AWS machine | `54.123.45.67` or `ec2-54-123-45-67.compute-1.amazonaws.com` |
+| `AWS_USER` | SSH user on AWS | `ubuntu` or `ec2-user` |
+| `AWS_PROJECT_PATH` | Full project path on AWS | `/home/ubuntu/my-instants-bot` |
 
-### Como Obter a Chave SSH Privada
+### How to Get the SSH Private Key
 
-Se você já tem acesso SSH funcionando:
+If you already have SSH access working:
 
-1. No seu computador local, encontre a chave privada (geralmente em `~/.ssh/`)
-2. Copie o conteúdo completo do arquivo (incluindo `-----BEGIN` e `-----END`)
-3. Cole no secret `AWS_SSH_PRIVATE_KEY`
+1. On your local computer, find the private key (usually in `~/.ssh/`)
+2. Copy the complete file content (including `-----BEGIN` and `-----END`)
+3. Paste it into the `AWS_SSH_PRIVATE_KEY` secret
 
-**Importante**: A chave pública correspondente deve estar no `~/.ssh/authorized_keys` da máquina AWS.
+**Important**: The corresponding public key must be in the `~/.ssh/authorized_keys` of the AWS machine.
 
-## Passo 3: Configurar Docker Compose na AWS
+## Step 3: Configure Docker Compose on AWS
 
-Na sua máquina AWS, você tem duas opções:
+On your AWS machine, you have two options:
 
-### Opção A: Usar docker-compose.prod.yml (Recomendado)
+### Option A: Use docker-compose.prod.yml (Recommended)
 
-1. Na máquina AWS, edite o `docker-compose.yml` ou renomeie `docker-compose.prod.yml`:
+1. On the AWS machine, edit `docker-compose.yml` or rename `docker-compose.prod.yml`:
 
 ```bash
-# Na máquina AWS
-cd /caminho/do/projeto
-# Edite docker-compose.yml e substitua a seção 'build' por 'image'
-# Ou use o docker-compose.prod.yml como base
+# On AWS machine
+cd /path/to/project
+# Edit docker-compose.yml and replace 'build' section with 'image'
+# Or use docker-compose.prod.yml as base
 ```
 
-2. Atualize o `docker-compose.yml` para usar a imagem do registry:
+2. Update `docker-compose.yml` to use the registry image:
 
 ```yaml
 services:
   bot:
-    image: SEU_USUARIO_DOCKER/my-instants-bot:latest  # Substitua SEU_USUARIO_DOCKER
-    # Remova a seção 'build'
+    image: YOUR_DOCKER_USER/my-instants-bot:latest  # Replace YOUR_DOCKER_USER
+    # Remove the 'build' section
 ```
 
-### Opção B: Manter build local (não recomendado para CI/CD)
+### Option B: Keep local build (not recommended for CI/CD)
 
-Se preferir manter o build local, o workflow ainda funcionará, mas não será otimizado.
+If you prefer to keep the local build, the workflow will still work, but it won't be optimized.
 
-## Passo 4: Testar o Deploy
+## Step 4: Test Deployment
 
-1. Faça um commit e push para a branch `main`:
+1. Make a commit and push to the `main` branch:
 
 ```bash
 git add .
-git commit -m "Configurar CI/CD"
+git commit -m "Configure CI/CD"
 git push origin main
 ```
 
-2. Vá para **Actions** no GitHub e acompanhe o workflow
-3. Verifique os logs para garantir que tudo funcionou
+2. Go to **Actions** on GitHub and monitor the workflow
+3. Check the logs to ensure everything worked
 
-## Passo 5: Verificar o Deploy
+## Step 5: Verify Deployment
 
-Após o workflow completar, verifique na máquina AWS:
+After the workflow completes, verify on the AWS machine:
 
 ```bash
-# Conectar na máquina AWS
-ssh usuario@host
+# Connect to AWS machine
+ssh user@host
 
-# Verificar containers
+# Check containers
 docker-compose ps
 
-# Ver logs
+# View logs
 docker-compose logs -f bot
 ```
 
 ## Troubleshooting
 
-### Erro: "Permission denied (publickey)"
+### Error: "Permission denied (publickey)"
 
-- Verifique se a chave SSH privada está correta no secret
-- Verifique se a chave pública está no `~/.ssh/authorized_keys` da AWS
-- Teste a conexão SSH manualmente: `ssh usuario@host`
+- Verify that the SSH private key is correct in the secret
+- Verify that the public key is in AWS `~/.ssh/authorized_keys`
+- Test SSH connection manually: `ssh user@host`
 
-### Erro: "Cannot connect to the Docker daemon"
+### Error: "Cannot connect to the Docker daemon"
 
-- Verifique se o usuário SSH tem permissão para usar Docker
-- Adicione o usuário ao grupo docker: `sudo usermod -aG docker $USER`
-- Faça logout e login novamente
+- Verify that the SSH user has permission to use Docker
+- Add user to docker group: `sudo usermod -aG docker $USER`
+- Log out and log in again
 
-### Erro: "docker-compose: command not found"
+### Error: "docker-compose: command not found"
 
-- Instale Docker Compose na máquina AWS
-- Ou use `docker compose` (sem hífen) se for versão mais recente
+- Install Docker Compose on AWS machine
+- Or use `docker compose` (without hyphen) if it's a newer version
 
-### Erro: "Image pull failed"
+### Error: "Image pull failed"
 
-- Verifique se `DOCKER_USERNAME` e `DOCKER_PASSWORD` estão corretos
-- Verifique se a imagem foi criada no Docker Hub
-- Verifique se o nome da imagem no `docker-compose.yml` está correto
+- Verify that `DOCKER_USERNAME` and `DOCKER_PASSWORD` are correct
+- Verify that the image was created on Docker Hub
+- Verify that the image name in `docker-compose.yml` is correct
 
-### Workflow não dispara
+### Workflow doesn't trigger
 
-- Verifique se está fazendo push para a branch `main`
-- Verifique se o workflow está habilitado em **Settings** > **Actions** > **General**
+- Verify that you're pushing to the `main` branch
+- Verify that the workflow is enabled in **Settings** > **Actions** > **General**
 
-## Execução Manual
+## Manual Execution
 
-Você também pode executar o workflow manualmente:
+You can also run the workflow manually:
 
-1. Vá para **Actions** no GitHub
-2. Selecione o workflow **Build and Deploy**
-3. Clique em **Run workflow**
-4. Selecione a branch e clique em **Run workflow**
+1. Go to **Actions** on GitHub
+2. Select the **Build and Deploy** workflow
+3. Click **Run workflow**
+4. Select the branch and click **Run workflow**
 
-## Alternativa: Usar AWS ECR
+## Alternative: Use AWS ECR
 
-Se preferir usar AWS ECR ao invés do Docker Hub:
+If you prefer to use AWS ECR instead of Docker Hub:
 
-1. Crie um repositório no ECR
-2. Modifique o workflow para usar `aws-actions/amazon-ecr-login@v2`
-3. Adicione os secrets `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY`
-4. Atualize as tags da imagem para usar o registry do ECR
+1. Create a repository in ECR
+2. Modify the workflow to use `aws-actions/amazon-ecr-login@v2`
+3. Add the secrets `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+4. Update image tags to use ECR registry
 
-## Segurança
+## Security
 
-- ✅ Nunca commite secrets no código
-- ✅ Use tokens ao invés de senhas
-- ✅ Rotacione tokens regularmente
-- ✅ Use chaves SSH específicas para CI/CD
-- ✅ Limite permissões da chave SSH quando possível
+- ✅ Never commit secrets in code
+- ✅ Use tokens instead of passwords
+- ✅ Rotate tokens regularly
+- ✅ Use SSH keys specific for CI/CD
+- ✅ Limit SSH key permissions when possible
 

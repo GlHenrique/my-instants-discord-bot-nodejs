@@ -1,51 +1,51 @@
 # GitHub Actions CI/CD
 
-Este diretório contém os workflows de CI/CD para deploy automático do bot.
+This directory contains CI/CD workflows for automatic bot deployment.
 
-## Configuração
+## Configuration
 
-Para que o workflow funcione, você precisa configurar os seguintes secrets no GitHub:
+For the workflow to work, you need to configure the following secrets on GitHub:
 
-### Secrets Necessários
+### Required Secrets
 
-1. **DOCKER_USERNAME**: Seu usuário do Docker Hub
-2. **DOCKER_PASSWORD**: Token de acesso do Docker Hub (não use sua senha, crie um token em Account Settings > Security)
-3. **AWS_SSH_PRIVATE_KEY**: Chave privada SSH para acessar a máquina AWS
-4. **AWS_HOST**: Endereço IP ou hostname da máquina AWS
-5. **AWS_USER**: Usuário SSH na máquina AWS (geralmente `ubuntu`, `ec2-user`, ou `admin`)
-6. **AWS_PROJECT_PATH**: Caminho completo do projeto na máquina AWS (ex: `/home/ubuntu/my-instants-bot`)
+1. **DOCKER_USERNAME**: Your Docker Hub username
+2. **DOCKER_PASSWORD**: Docker Hub access token (don't use your password, create a token in Account Settings > Security)
+3. **AWS_SSH_PRIVATE_KEY**: SSH private key to access AWS machine
+4. **AWS_HOST**: IP address or hostname of AWS machine
+5. **AWS_USER**: SSH user on AWS machine (usually `ubuntu`, `ec2-user`, or `admin`)
+6. **AWS_PROJECT_PATH**: Full project path on AWS machine (e.g., `/home/ubuntu/my-instants-bot`)
 
-### Como Configurar os Secrets
+### How to Configure Secrets
 
-1. Vá para o repositório no GitHub
-2. Clique em **Settings** > **Secrets and variables** > **Actions**
-3. Clique em **New repository secret**
-4. Adicione cada um dos secrets listados acima
+1. Go to your repository on GitHub
+2. Click **Settings** > **Secrets and variables** > **Actions**
+3. Click **New repository secret**
+4. Add each of the secrets listed above
 
-### Alternativa: Usar AWS ECR ao invés de Docker Hub
+### Alternative: Use AWS ECR instead of Docker Hub
 
-Se preferir usar AWS ECR ao invés do Docker Hub, você pode modificar o workflow para:
+If you prefer to use AWS ECR instead of Docker Hub, you can modify the workflow to:
 
-1. Usar `aws-actions/amazon-ecr-login@v2` para login no ECR
-2. Usar o registry do ECR no lugar do Docker Hub
-3. Adicionar as secrets `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY`
+1. Use `aws-actions/amazon-ecr-login@v2` to log in to ECR
+2. Use ECR registry instead of Docker Hub
+3. Add the secrets `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
 
-### Estrutura do Deploy
+### Deployment Structure
 
-O workflow executa os seguintes passos:
+The workflow executes the following steps:
 
-1. ✅ Faz checkout do código
-2. 🏗️ Builda a imagem Docker usando Docker Buildx
-3. 📤 Faz push da imagem para o registry
-4. 🔐 Conecta via SSH na máquina AWS
-5. 📥 Faz pull da nova imagem
-6. 🛑 Para os containers existentes
-7. 🚀 Inicia os containers com a nova imagem
-8. 🧹 Limpa imagens antigas não utilizadas
-9. ✅ Verifica o status do deploy
+1. ✅ Checks out the code
+2. 🏗️ Builds Docker image using Docker Buildx
+3. 📤 Pushes image to registry
+4. 🔐 Connects via SSH to AWS machine
+5. 📥 Pulls the new image
+6. 🛑 Stops existing containers
+7. 🚀 Starts containers with the new image
+8. 🧹 Cleans up unused old images
+9. ✅ Verifies deployment status
 
-### Quando o Workflow Dispara
+### When the Workflow Triggers
 
-- **Push para `main`**: Deploy automático quando código é mergeado na branch principal
-- **Workflow Dispatch**: Permite execução manual através da interface do GitHub Actions
+- **Push to `main`**: Automatic deployment when code is merged to the main branch
+- **Workflow Dispatch**: Allows manual execution through GitHub Actions interface
 

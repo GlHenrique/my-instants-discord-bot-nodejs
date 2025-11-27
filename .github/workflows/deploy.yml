@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # Permite execução manual
+  workflow_dispatch: # Allows manual execution
 
 env:
   DOCKER_IMAGE: my-instants-bot
@@ -15,19 +15,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout código
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Configurar Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login no Docker Hub
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build e Push da imagem Docker
+      - name: Build and Push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -36,48 +36,48 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}:buildcache,mode=max
 
-      - name: Configurar SSH
+      - name: Set up SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
 
-      - name: Adicionar servidor AWS ao known_hosts
+      - name: Add AWS server to known_hosts
         run: |
           ssh-keyscan -H ${{ secrets.AWS_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy na AWS
+      - name: Deploy to AWS
         run: |
           ssh ${{ secrets.AWS_USER }}@${{ secrets.AWS_HOST }} << 'EOF'
             set -e
-            echo "🔄 Fazendo pull da nova imagem..."
+            echo "🔄 Pulling new image..."
             docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
             
-            echo "📁 Navegando para o diretório do projeto..."
+            echo "📁 Navigating to project directory..."
             cd ${{ secrets.AWS_PROJECT_PATH }}
             
-            # Verifica se docker-compose.prod.yml existe, caso contrário usa docker-compose.yml
+            # Check if docker-compose.prod.yml exists, otherwise use docker-compose.yml
             COMPOSE_FILE="docker-compose.yml"
             if [ -f "docker-compose.prod.yml" ]; then
               COMPOSE_FILE="docker-compose.prod.yml"
-              echo "📄 Usando docker-compose.prod.yml"
+              echo "📄 Using docker-compose.prod.yml"
             else
-              echo "📄 Usando docker-compose.yml"
+              echo "📄 Using docker-compose.yml"
             fi
             
-            echo "🛑 Parando containers existentes..."
+            echo "🛑 Stopping existing containers..."
             docker-compose -f $COMPOSE_FILE down || true
             
-            echo "🚀 Iniciando containers com a nova imagem..."
+            echo "🚀 Starting containers with new image..."
             docker-compose -f $COMPOSE_FILE up -d
             
-            echo "🧹 Limpando imagens antigas não utilizadas..."
+            echo "🧹 Cleaning up unused old images..."
             docker image prune -f
             
-            echo "✅ Deploy concluído com sucesso!"
+            echo "✅ Deployment completed successfully!"
             docker-compose -f $COMPOSE_FILE ps
           EOF
 
-      - name: Verificar status do deploy
+      - name: Verify deployment status
         run: |
           ssh ${{ secrets.AWS_USER }}@${{ secrets.AWS_HOST }} << 'EOF'
             cd ${{ secrets.AWS_PROJECT_PATH }}
@@ -86,9 +86,9 @@ jobs:
               COMPOSE_FILE="docker-compose.prod.yml"
             fi
             
-            echo "📊 Status dos containers:"
+            echo "📊 Container status:"
             docker-compose -f $COMPOSE_FILE ps
             echo ""
-            echo "📝 Últimas linhas do log:"
+            echo "📝 Last log lines:"
             docker-compose -f $COMPOSE_FILE logs --tail=20
           EOF

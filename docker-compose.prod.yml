@@ -9,7 +9,7 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-    # Health check opcional - verifica se o container está rodando
+    # Optional health check - verifies if container is running
     healthcheck:
       test: ['CMD', 'node', '-e', 'process.exit(0)']
       interval: 30s
